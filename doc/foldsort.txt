@@ -1,0 +1,77 @@
+*foldsort.txt*	Sort fold regions in the range
+
+Author: Shota Nozaki <emonkak@gmail.com>
+License: MIT license
+
+==============================================================================
+CONTENTS						*foldsort-contents*
+
+Introduction	|foldsort-introduction|
+Usage		|foldsort-usage|
+Interface	|foldsort-interface|
+  Key Mappings	|foldsort-key-mappings|
+
+==============================================================================
+INTRODUCTION					*foldsort-introduction*
+
+*foldsort* is a Vim plugin to provide a command to sort fold regions in the
+range.
+
+Requirements:
+
+- Vim 8.0 or later
+
+==============================================================================
+USAGE							*foldsort-usage*
+
+For example, suppose you edit the following content that contain some folds:
+>
+	function! B()  "{{{
+	endfunction  "}}}
+
+	function! C()  "{{{
+	endfunction  "}}}
+
+	function! A()  "{{{
+	endfunction  "}}}
+>
+However, the content is actually shown as follows in the display because
+folds are closed.
+>
+	+--  2 lines: function! B()  -----------------------------------------
+	
+	+--  2 lines: function! C()  -----------------------------------------
+	
+	+--  2 lines: function! A()  -----------------------------------------
+>
+In this state, if you execute |:%FoldSort| command, the content in the display
+will be changed as follows.
+>
+	+--  2 lines: function! A()  -----------------------------------------
+
+	+--  2 lines: function! B()  -----------------------------------------
+	
+	+--  2 lines: function! C()  -----------------------------------------
+>
+==============================================================================
+INTERFACE					*foldsort-interface*
+
+------------------------------------------------------------------------------
+COMMANDS						*foldsort-commands*
+
+:[range]FoldSort[!] [{pattern}]					*:FoldSort*
+	Sort fold regions that are closed in the range by the first line. When
+	no range is given, all fold regions are sorted.
+
+	With [!] the order is reversed.
+
+	When {pattern} is specified, fold regions are sorted by the text where
+	{pattern} matches. If there is no match, the fold region is not
+	sorted.
+
+:[range]FoldShuffle 						*:FoldShuffle*
+	Sort fold regions that are closed at random. When no range is given,
+	all fold regions are sorted.
+
+==============================================================================
+vim:tw=78:ts=8:ft=help

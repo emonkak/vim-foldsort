@@ -1,200 +1,211 @@
-" foldsort - {abstract}
-" Version: 0.0.0
-" Copyright (C) 2013 emonkak <emonkak@gmail.com>
-" License: MIT license  {{{
-"     Permission is hereby granted, free of charge, to any person obtaining
-"     a copy of this software and associated documentation files (the
-"     "Software"), to deal in the Software without restriction, including
-"     without limitation the rights to use, copy, modify, merge, publish,
-"     distribute, sublicense, and/or sell copies of the Software, and to
-"     permit persons to whom the Software is furnished to do so, subject to
-"     the following conditions:
-"
-"     The above copyright notice and this permission notice shall be included
-"     in all copies or substantial portions of the Software.
-"
-"     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-"     OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-"     MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-"     IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-"     CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-"     TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-"     SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-" }}}
-" Interface  "{{{1
-function! foldsort#sort() range  "{{{2
-  let original_winnr = winnr()
-  let original_lazyredraw = &lazyredraw
+if !exists('g:foldsort#debug')
+  let g:foldsort#debug = 0
+endif
 
-  set lazyredraw
-  split
-  normal! zM
+function! foldsort#shuffle_folds() abort range
+  let folds = s:enumerate_folds(a:firstline, a:lastline)
+  let fold_groups = s:group_folds(folds)
+  for folds in fold_groups
+    let shuffled_folds = s:shuffle(copy(folds))
+    call s:arrange_folds(folds, shuffled_folds)
+  endfor
+endfunction
 
-  try
-    let currnet_lnum = foldclosed(a:firstline)
-    let currnet_lnum = currnet_lnum > 0 ? currnet_lnum : a:firstline
-    let last_lnum = a:lastline
-    let folds_per_level = []
-
-    while currnet_lnum < last_lnum
-      if foldclosed(currnet_lnum) > 0
-        let fold_level = foldlevel(currnet_lnum)
-        let fold_end = foldclosedend(currnet_lnum)
-        let i = len(folds_per_level)
-
-        while i > fold_level
-          call s:sort(remove(folds_per_level, -1))
-          let i -= 1
-        endwhile
-
-        while i < fold_level
-          call add(folds_per_level, [])
-          let i += 1
-        endwhile
-
-        call add(folds_per_level[fold_level - 1], {
-        \  "lnum1": currnet_lnum,
-        \  "lnum2": fold_end,
-        \  "line": getline(currnet_lnum)
-        \ })
-
-        execute currnet_lnum 'foldopen'
+function! foldsort#sort_folds(pattern, is_reversed) abort range
+  let folds = s:enumerate_folds(a:firstline, a:lastline)
+  if a:pattern != ''
+    let matched_folds = []
+    for fold in folds
+      let matched_text = matchstr(fold.original_line, a:pattern)
+      if matched_text != ''
+        let fold.text = matched_text
+        call add(matched_folds, fold)
       endif
-
-      let currnet_lnum += 1
-    endwhile
-
-    for folds in reverse(folds_per_level)
-      call s:sort(folds)
     endfor
-  finally
-    close
-    execute original_winnr 'wincmd w'
-    let &lazyredraw = original_lazyredraw
-  endtry
+    let folds = matched_folds
+  endif
+  let fold_groups = s:group_folds(folds)
+  let ComparerFn = a:is_reversed
+  \              ? function('s:compare_folds_desc')
+  \              : function('s:compare_folds_asc')
+  for folds in fold_groups
+    let sorted_folds = sort(copy(folds), ComparerFn)
+    call s:arrange_folds(folds, sorted_folds)
+  endfor
 endfunction
 
+function! s:arrange_folds(before_folds, after_folds) abort
+  for i in range(len(a:before_folds))
+    let before_fold = a:before_folds[i]
+    let after_fold = a:after_folds[i]
 
+    if before_fold is after_fold
+      continue
+    endif
 
+    let j = after_fold.index
+    let a:before_folds[i] = after_fold
+    let a:before_folds[j] = before_fold
+    let after_fold.index = i
+    let before_fold.index = j
 
-" Misc.  "{{{1
-function! s:compare(x, y)  "{{{2
-  return a:x.line < a:y.line
+    let [ahead_fold, behind_fold] = s:swap_folds(before_fold, after_fold)
+
+    " Recalculate positions between the ahead fold and the behind fold.
+    if ahead_fold.index + 1 < behind_fold.index
+      let offset = (ahead_fold.end - ahead_fold.start) -
+      \            (behind_fold.end - behind_fold.start) 
+
+      for fold in a:before_folds[ahead_fold.index + 1:behind_fold.index - 1]
+        let fold.start += offset
+        let fold.end += offset
+      endfor
+    endif
+
+    if g:foldsort#debug && !s:check_folds(a:before_folds)
+      break
+    endif
+  endfor
 endfunction
 
+function! s:check_folds(folds) abort
+  let wrong_folds = []
 
+  for fold in a:folds
+    if fold.original_line !=# getline(fold.start)
+      call add(wrong_folds, fold)
+    endif
+  endfor
 
-
-function! s:sort(xs)  "{{{2
-  " Selection sort
-  let xs = a:xs
-  let i = 0
-  let l = len(a:xs)
-
-  while i < l
-    let j = i + 1
-    let min = i
-
-    while j < l
-      if s:compare(xs[j], xs[min])
-        let min = j
-      end
-
-      let j += 1
-    endwhile
-
-    call s:swap(xs, i, min)
-
-    let i += 1
-  endwhile
-
-  return xs
-endfunction
-
-
-
-
-function! s:swap(xs, i, j)  "{{{2
-  if a:i == a:j
-    return
+  if len(wrong_folds) > 0
+    echoerr 'Wrong folds are found: ' . string(wrong_folds)
+    return 0
   endif
 
-  call s:swap_lines(a:xs[a:i].lnum1, a:xs[a:i].lnum2, a:xs[a:j].lnum1, a:xs[a:j].lnum2)
-
-  let tmp_lnum1 = a:xs[a:i].lnum1
-  let a:xs[a:i].lnum2 = a:xs[a:j].lnum1 + (a:xs[a:i].lnum2 - a:xs[a:i].lnum1)
-  let a:xs[a:i].lnum1 = a:xs[a:j].lnum1
-  let a:xs[a:j].lnum2 = tmp_lnum1 + (a:xs[a:j].lnum2 - a:xs[a:j].lnum1)
-  let a:xs[a:j].lnum1 = tmp_lnum1
-
-  let tmp = a:xs[a:i]
-  let a:xs[a:i] = a:xs[a:j]
-  let a:xs[a:j] = tmp
-
-  let i = min([a:i + 1, a:j + 1])
-  let l = min([max([a:i + 1, a:j + 1]), len(a:xs)])
-  let diff = (a:xs[a:i].lnum2 - a:xs[a:i].lnum1) - (a:xs[a:j].lnum2 - a:xs[a:j].lnum1)
-
-  while i < l
-    let a:xs[i].lnum1 += diff
-    let a:xs[i].lnum2 += diff
-    let i += 1
-  endwhile
+  return 1
 endfunction
 
+function! s:compare_folds_asc(x, y) abort
+  if a:x.text < a:y.text
+    return -1
+  endif
+  if a:x.text > a:y.text
+    return 1
+  endif
+  return 0
+endfunction
 
+function! s:compare_folds_desc(x, y) abort
+  if a:x.text > a:y.text
+    return -1
+  endif
+  if a:x.text < a:y.text
+    return 1
+  endif
+  return 0
+endfunction
 
+function! s:enumerate_folds(first_line, last_line) abort
+  let folds = []
+  let start = a:first_line
 
-function! s:swap_lines(lnum1, lnum2, lnum3, lnum4)  "{{{2
+  while start <= a:last_line
+    if foldclosed(start) > 0
+      let end = foldclosedend(start)
+      if end > 0
+        let line = getline(start)
+        call add(folds, {
+        \   'start': start,
+        \   'end': end,
+        \   'level': foldlevel(start),
+        \   'text': line,
+        \   'original_line': line,
+        \ })
+        let start = end + 1
+      else
+        let start += 1
+      endif
+    else
+      let start += 1
+    endif
+  endwhile
+
+  return folds
+endfunction
+
+function! s:group_folds(folds) abort
+  let folds_by_level = {}
+
+  for fold in a:folds
+    let level = fold.level
+    if has_key(folds_by_level, level)
+      let folds = add(folds_by_level[level], fold)
+      let fold.index = len(folds) - 1
+    else
+      let folds_by_level[level] = [fold]
+      let fold.index = 0
+    endif
+  endfor
+
+  return values(folds_by_level)
+endfunction
+
+function! s:shuffle(elements) abort
+  let l = len(a:elements)
+  while l > 0
+    let i = rand() % l
+    let l -= 1
+    let tmp = a:elements[i]
+    let a:elements[i] = a:elements[l]
+    let a:elements[l] = tmp
+  endwhile
+  return a:elements
+endfunction
+
+function! s:sort_folds(folds, comparer) abort
+  return sort(a:folds, a:comparer)
+endfunction
+
+function! s:swap_folds(first_fold, second_fold) abort
+  if a:first_fold.start < a:second_fold.start
+    let ahead_fold = a:first_fold
+    let behind_fold = a:second_fold
+  else
+    let ahead_fold = a:second_fold
+    let behind_fold = a:first_fold
+  endif
+
+  let [start1, end1, start2, end2] = s:swap_ranges(ahead_fold.start,
+  \                                                ahead_fold.end,
+  \                                                behind_fold.start,
+  \                                                behind_fold.end)
+
+  execute start1 'foldclose'
+  execute start2 'foldclose'
+
+  let ahead_fold.start = start2
+  let ahead_fold.end = end2
+  let behind_fold.start = start1
+  let behind_fold.end = end1
+
+  return [behind_fold, ahead_fold]
+endfunction
+
+function! s:swap_ranges(start1, end1, start2, end2) abort
   let reg_u = [@", getregtype('"')]
 
-  " (1) Yank Fold-1
-  " +-- Fold-1 (Yanked)  -----------------------------------------------------
-  "
-  " +-- Fold-2  --------------------------------------------------------------
-  "
-  " (2) Put to the bottom line of Fold-2
-  " +-- Fold-1  --------------------------------------------------------------
-  "
-  " +-- Fold-2  --------------------------------------------------------------
-  " +-- Fold-1 (Putted)  -----------------------------------------------------
-  "
-  " (3) Delete original Fold-2
-  " +-- Fold-1  --------------------------------------------------------------
-  "
-  " +-- Fold-2 (Deleted)  ----------------------------------------------------
-  " +-- Fold-1  --------------------------------------------------------------
-  "
-  " (4) Put to the bottom line of Fold-1
-  " +-- Fold-1  --------------------------------------------------------------
-  " +-- Fold-2 (Putted)  -----------------------------------------------------
-  "
-  " +-- Fold-1  --------------------------------------------------------------
-  "
-  " (5) Delete original Fold-1
-  " +-- Fold-1 (Deleted)  ----------------------------------------------------
-  " +-- Fold-2  --------------------------------------------------------------
-  "
-  " +-- Fold-1  --------------------------------------------------------------
-  if a:lnum1 < a:lnum3
-    silent execute printf('%d,%dyank "',   a:lnum1, a:lnum2)
-    silent execute printf('%dput "',       a:lnum4)
-    silent execute printf('%d,%ddelete "', a:lnum3, a:lnum4)
-    silent execute printf('%dput "',       a:lnum2)
-    silent execute printf('%d,%ddelete _', a:lnum1, a:lnum2)
-  elseif a:lnum1 > a:lnum3
-    silent execute printf('%d,%dyank "',   a:lnum3, a:lnum4)
-    silent execute printf('%dput "',       a:lnum2)
-    silent execute printf('%d,%ddelete "', a:lnum1, a:lnum2)
-    silent execute printf('%dput "',       a:lnum4)
-    silent execute printf('%d,%ddelete _', a:lnum3, a:lnum4)
-  end
+  let lines1 = a:end1 - a:start1
+  let lines2 = a:end2 - a:start2
+  let new_start2 = a:start2 + (lines2 - lines1)
 
-  call setreg('"', reg_u[0], reg_u[1])
+  try
+    silent execute (a:start2 . ',' . a:end2 . 'delete') '"'
+    silent execute (a:end1 . 'put') '"'
+    silent execute (a:start1 . ',' . a:end1 . 'delete') '"'
+    silent execute ((new_start2 - 1) . 'put') '"'
+  finally
+    call setreg('"', reg_u[0], reg_u[1])
+  endtry
+
+  return [a:start1, a:start1 + lines2, new_start2, new_start2 + lines1]
 endfunction
-
-
-
-
-" __END__  "{{{1
-" vim: foldmethod=marker
