@@ -60,18 +60,20 @@ INTERFACE					*foldsort-interface*
 COMMANDS						*foldsort-commands*
 
 :[range]FoldSort[!] [{pattern}]					*:FoldSort*
-	Sort fold regions that are closed in the range by the first line. When
-	no range is given, all fold regions are sorted.
+	Sort fold regions that are closed for each the fold level in the
+	range. When no range is given, all fold regions that are closed in
+	the buffer are sorted.
 
 	With [!] the order is reversed.
 
 	When {pattern} is specified, fold regions are sorted by the text where
 	{pattern} matches. If there is no match, the fold region is not
-	sorted.
+	sorted. When no {pattern}, fold regions are sorted by the text of the
+	first line.
 
 :[range]FoldShuffle 						*:FoldShuffle*
 	Sort fold regions that are closed at random. When no range is given,
-	all fold regions are sorted.
+	all fold regions are closed in the buffer are sorted.
 
 ==============================================================================
 vim:tw=78:ts=8:ft=help
