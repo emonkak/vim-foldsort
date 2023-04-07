@@ -276,5 +276,5 @@ function! s:do_test(command, source, expected) abort
   call setline(1, a:source)
   execute a:command
   call assert_equal(a:expected, getline(1, line('$')))
-  close!
+  bdelete!
 endfunction
