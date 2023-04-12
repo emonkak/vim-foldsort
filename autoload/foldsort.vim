@@ -86,20 +86,20 @@ function! s:check_folds(folds) abort
 endfunction
 
 function! s:compare_folds_asc(x, y) abort
-  if a:x.text < a:y.text
+  if a:x.text <# a:y.text
     return -1
   endif
-  if a:x.text > a:y.text
+  if a:x.text ># a:y.text
     return 1
   endif
   return 0
 endfunction
 
 function! s:compare_folds_desc(x, y) abort
-  if a:x.text > a:y.text
+  if a:x.text ># a:y.text
     return -1
   endif
-  if a:x.text < a:y.text
+  if a:x.text <# a:y.text
     return 1
   endif
   return 0

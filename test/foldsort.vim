@@ -2,7 +2,7 @@ let g:foldsort#debug = 1
 
 silent runtime! plugin/foldsort.vim
 
-function! s:test_foldsort() abort
+function! s:test_permutations() abort
   let folds = [
   \   [
   \     'A {{{',
@@ -46,7 +46,7 @@ function! s:test_foldsort() abort
   endfor
 endfunction
 
-function! s:test_foldsort_matched() abort
+function! s:test_pattern() abort
   let source = [
   \   'C {{{',
   \   'C }}}',
@@ -107,7 +107,7 @@ function! s:test_foldsort_matched() abort
   call s:do_test('%FoldSort! [ABC]', source, expected)
 endfunction
 
-function! s:test_foldsort_nested() abort
+function! s:test_nested_folds() abort
   let source = [
   \   'B {{{',
   \   'B.1',
@@ -236,6 +236,31 @@ function! s:test_foldsort_nested() abort
   \ ]
 
   call s:do_test('1foldopen | 21foldopen | %FoldSort!', source, expected)
+endfunction
+
+function! s:test_sort_in_case_sensitive_order() abort
+  let source = [
+  \   'A {{{1',
+  \   'A.1',
+  \   'a {{{1',
+  \   'a.1',
+  \   'B {{{1',
+  \   'B.1',
+  \   'b {{{1',
+  \   'b.1',
+  \ ]
+  let expected = [
+  \   'A {{{1',
+  \   'A.1',
+  \   'B {{{1',
+  \   'B.1',
+  \   'a {{{1',
+  \   'a.1',
+  \   'b {{{1',
+  \   'b.1',
+  \ ]
+
+  call s:do_test('%FoldSort', source, expected)
 endfunction
 
 function! s:permutations(elements) abort
