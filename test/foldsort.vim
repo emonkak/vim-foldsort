@@ -1,4 +1,4 @@
-let g:foldsort#debug = 1
+let g:foldsort_debug = 1
 
 silent runtime! plugin/foldsort.vim
 

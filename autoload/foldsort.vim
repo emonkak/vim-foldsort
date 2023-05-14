@@ -1,5 +1,5 @@
-if !exists('g:foldsort#debug')
-  let g:foldsort#debug = 0
+if !exists('g:foldsort_debug')
+  let g:foldsort_debug = 0
 endif
 
 function! foldsort#shuffle_folds() abort range
@@ -62,7 +62,7 @@ function! s:arrange_folds(before_folds, after_folds) abort
       endfor
     endif
 
-    if g:foldsort#debug && !s:check_folds(a:before_folds)
+    if g:foldsort_debug && !s:check_folds(a:before_folds)
       break
     endif
   endfor
