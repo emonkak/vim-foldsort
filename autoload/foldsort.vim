@@ -180,9 +180,6 @@ function! s:swap_folds(first_fold, second_fold) abort
   \                                                behind_fold.start,
   \                                                behind_fold.end)
 
-  execute start1 'foldclose'
-  execute start2 'foldclose'
-
   let ahead_fold.start = start2
   let ahead_fold.end = end2
   let behind_fold.start = start1
@@ -199,13 +196,18 @@ function! s:swap_ranges(start1, end1, start2, end2) abort
   let new_start2 = a:start2 + (lines2 - lines1)
 
   try
+    execute (a:start2 . ',' . a:end2 . 'foldopen')
     silent execute (a:start2 . ',' . a:end2 . 'delete') '"'
     silent execute (a:end1 . 'put') '"'
+    execute (a:start1 . ',' . a:end1 . 'foldopen')
     silent execute (a:start1 . ',' . a:end1 . 'delete') '"'
     silent execute ((new_start2 - 1) . 'put') '"'
   finally
     call setreg('"', reg_u[0], reg_u[1])
   endtry
+
+  execute (a:start1 . ',' . a:end1 . 'foldclose')
+  execute (a:start2 . ',' . a:end2 . 'foldclose')
 
   return [a:start1, a:start1 + lines2, new_start2, new_start2 + lines1]
 endfunction
