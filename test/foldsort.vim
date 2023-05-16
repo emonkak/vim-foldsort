@@ -2,111 +2,6 @@ let g:foldsort_debug = 1
 
 silent runtime! plugin/foldsort.vim
 
-function! s:test_permutations() abort
-  let folds = [
-  \   [
-  \     'A {{{',
-  \     'A.1',
-  \     'A.2',
-  \     'A }}}',
-  \   ],
-  \   [
-  \     'B {{{',
-  \     'B.1',
-  \     'B }}}',
-  \   ],
-  \   [
-  \     'C {{{',
-  \     'C }}}',
-  \   ],
-  \ ]
-  let gaps = [
-  \   ['1', '2', '3'],
-  \   ['4', '5'],
-  \   ['6'],
-  \   [],
-  \ ]
-
-  for p_folds in s:permutations(folds)
-    for p_gaps in s:permutations(gaps)
-      let source = copy(p_gaps[0])
-      let expected_result = copy(p_gaps[0])
-      let reversed_result = copy(p_gaps[0])
-      for i in range(len(folds))
-        call extend(source, p_folds[i])
-        call extend(source, p_gaps[i + 1])
-        call extend(expected_result, folds[i])
-        call extend(expected_result, p_gaps[i + 1])
-        call extend(reversed_result, folds[-(i + 1)])
-        call extend(reversed_result, p_gaps[i + 1])
-      endfor
-      call s:do_test('%FoldSort', source, expected_result)
-      call s:do_test('%FoldSort!', source, reversed_result)
-    endfor
-  endfor
-endfunction
-
-function! s:test_pattern() abort
-  let source = [
-  \   'C {{{',
-  \   'C }}}',
-  \   'B {{{',
-  \   'B }}}',
-  \   'D {{{',
-  \   'D }}}',
-  \   'A {{{',
-  \   'A }}}',
-  \ ]
-
-  let expected = [
-  \   'C {{{',
-  \   'C }}}',
-  \   'A {{{',
-  \   'A }}}',
-  \   'D {{{',
-  \   'D }}}',
-  \   'B {{{',
-  \   'B }}}',
-  \ ]
-  call s:do_test('%FoldSort [AB]', source, expected)
-
-  let expected = [
-  \   'C {{{',
-  \   'C }}}',
-  \   'B {{{',
-  \   'B }}}',
-  \   'D {{{',
-  \   'D }}}',
-  \   'A {{{',
-  \   'A }}}',
-  \ ]
-  call s:do_test('%FoldSort! [AB]', source, expected)
-
-  let expected = [
-  \   'A {{{',
-  \   'A }}}',
-  \   'B {{{',
-  \   'B }}}',
-  \   'D {{{',
-  \   'D }}}',
-  \   'C {{{',
-  \   'C }}}',
-  \ ]
-  call s:do_test('%FoldSort [ABC]', source, expected)
-
-  let expected = [
-  \   'C {{{',
-  \   'C }}}',
-  \   'B {{{',
-  \   'B }}}',
-  \   'D {{{',
-  \   'D }}}',
-  \   'A {{{',
-  \   'A }}}',
-  \ ]
-  call s:do_test('%FoldSort! [ABC]', source, expected)
-endfunction
-
 function! s:test_nested_folds() abort
   let source = [
   \   'B {{{',
@@ -238,6 +133,111 @@ function! s:test_nested_folds() abort
   call s:do_test('1foldopen | 21foldopen | %FoldSort!', source, expected)
 endfunction
 
+function! s:test_pattern() abort
+  let source = [
+  \   'C {{{',
+  \   'C }}}',
+  \   'B {{{',
+  \   'B }}}',
+  \   'D {{{',
+  \   'D }}}',
+  \   'A {{{',
+  \   'A }}}',
+  \ ]
+
+  let expected = [
+  \   'C {{{',
+  \   'C }}}',
+  \   'A {{{',
+  \   'A }}}',
+  \   'D {{{',
+  \   'D }}}',
+  \   'B {{{',
+  \   'B }}}',
+  \ ]
+  call s:do_test('%FoldSort [AB]', source, expected)
+
+  let expected = [
+  \   'C {{{',
+  \   'C }}}',
+  \   'B {{{',
+  \   'B }}}',
+  \   'D {{{',
+  \   'D }}}',
+  \   'A {{{',
+  \   'A }}}',
+  \ ]
+  call s:do_test('%FoldSort! [AB]', source, expected)
+
+  let expected = [
+  \   'A {{{',
+  \   'A }}}',
+  \   'B {{{',
+  \   'B }}}',
+  \   'D {{{',
+  \   'D }}}',
+  \   'C {{{',
+  \   'C }}}',
+  \ ]
+  call s:do_test('%FoldSort [ABC]', source, expected)
+
+  let expected = [
+  \   'C {{{',
+  \   'C }}}',
+  \   'B {{{',
+  \   'B }}}',
+  \   'D {{{',
+  \   'D }}}',
+  \   'A {{{',
+  \   'A }}}',
+  \ ]
+  call s:do_test('%FoldSort! [ABC]', source, expected)
+endfunction
+
+function! s:test_permutations() abort
+  let folds = [
+  \   [
+  \     'A {{{',
+  \     'A.1',
+  \     'A.2',
+  \     'A }}}',
+  \   ],
+  \   [
+  \     'B {{{',
+  \     'B.1',
+  \     'B }}}',
+  \   ],
+  \   [
+  \     'C {{{',
+  \     'C }}}',
+  \   ],
+  \ ]
+  let gaps = [
+  \   ['1', '2', '3'],
+  \   ['4', '5'],
+  \   ['6'],
+  \   [],
+  \ ]
+
+  for p_folds in s:permutations(folds)
+    for p_gaps in s:permutations(gaps)
+      let source = copy(p_gaps[0])
+      let expected_result = copy(p_gaps[0])
+      let reversed_result = copy(p_gaps[0])
+      for i in range(len(folds))
+        call extend(source, p_folds[i])
+        call extend(source, p_gaps[i + 1])
+        call extend(expected_result, folds[i])
+        call extend(expected_result, p_gaps[i + 1])
+        call extend(reversed_result, folds[-(i + 1)])
+        call extend(reversed_result, p_gaps[i + 1])
+      endfor
+      call s:do_test('%FoldSort', source, expected_result)
+      call s:do_test('%FoldSort!', source, reversed_result)
+    endfor
+  endfor
+endfunction
+
 function! s:test_sort_in_case_sensitive_order() abort
   let source = [
   \   'A {{{1',
@@ -260,6 +260,30 @@ function! s:test_sort_in_case_sensitive_order() abort
   \   'b.1',
   \ ]
 
+  call s:do_test('%FoldSort', source, expected)
+endfunction
+
+function! s:test_unclosed_folds() abort
+  let source = [
+  \   'C {{{',
+  \   'C }}}',
+  \   'B {{{',
+  \   'B }}}',
+  \   'D {{{',
+  \   'D }}}',
+  \   'A {{{',
+  \   'A',
+  \ ]
+  let expected = [
+  \   'A {{{',
+  \   'A',
+  \   'B {{{',
+  \   'B }}}',
+  \   'C {{{',
+  \   'C }}}',
+  \   'D {{{',
+  \   'D }}}',
+  \ ]
   call s:do_test('%FoldSort', source, expected)
 endfunction
 
