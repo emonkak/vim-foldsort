@@ -1,16 +1,17 @@
-#!/bin/env -S bash -c '${VIMPROG-vim} -u NONE -i NONE -N -n -E -s --cmd "source $0" <(IFS=$\'\n\'; echo "$*")'
+#!/bin/env -S bash -c '${VIMPROG-vim} -u NONE -i NONE -N -n -E -s -S "$0" <(IFS=$\'\n\'; echo "$*")'
 
 function! s:run(package_dir) abort
   set nohidden noswapfile
 
-  let args = filter(getline(0, line('$')), 'v:val != ""')
+  let args = filter(getline(1, line('$')), 'v:val != ""')
+
   %argdelete
   %bwipeout!
 
   let &runtimepath .= ',' . a:package_dir
   let &packpath .= ',' . a:package_dir
 
-  for test_file in globpath(a:package_dir, 'test/**/*.vim', 0, 1)
+  for test_file in globpath(a:package_dir, 'test/**/*_test.vim', 0, 1)
     source `=test_file`
   endfor
 
@@ -115,12 +116,11 @@ function! s:run(package_dir) abort
     \  || col('$') > 1
     \  || winnr('$') > 1
     \  || tabpagenr('$') > 1
-    \  || getchar(0) isnot 0
       call add(errors, {
       \   'script_name': script_name,
       \   'test_name': test_name,
       \   'messages': [
-      \     'CAUTION: Unclean buffers, windows, tabs, or typeahead buffer were found, therefore the execution of remaining tests has been aborted.'
+      \     'CAUTION: Unclean buffers, windows, or tabs were found, therefore the execution of remaining tests has been aborted.'
       \   ],
       \ })
       break
@@ -168,4 +168,4 @@ endfunction
 
 verbose echo matchstr(execute('version'), '^\n*\zs[^\n]\+') "\n"
 
-autocmd VimEnter *  verbose call s:run(expand('<sfile>:p:h'))
+verbose call s:run(expand('<sfile>:p:h'))
