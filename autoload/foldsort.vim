@@ -188,31 +188,28 @@ function! s:swap_folds(first_fold, second_fold) abort
   return [behind_fold, ahead_fold]
 endfunction
 
-function! s:swap_ranges(start1, end1, start2, end2) abort
+function! s:swap_ranges(start_1, end_1, start_2, end_2) abort
   let reg_u = [@", getregtype('"')]
 
-  let lines1 = a:end1 - a:start1
-  let lines2 = a:end2 - a:start2
-  let new_start2 = a:start2 + (lines2 - lines1)
+  let lines_1 = a:end_1 - a:start_1
+  let lines_2 = a:end_2 - a:start_2
+  let new_end_1 = a:start_1 + lines_2
+  let new_start_2 = a:start_2 + (lines_2 - lines_1)
+  let new_end_2 = new_start_2 + lines_1
 
   try
-    execute (a:start2 . 'foldopen')
-    silent execute (a:start2 . ',' . a:end2 . 'delete') '"'
-    silent execute (a:end1 . 'put') '"'
-    execute (a:start1 . 'foldopen')
-    silent execute (a:start1 . ',' . a:end1 . 'delete') '"'
-    silent execute ((new_start2 - 1) . 'put') '"'
+    execute (a:start_2 . ',' . a:end_2 . 'foldopen')
+    silent execute (a:start_2 . ',' . a:end_2 . 'delete') '"'
+    silent execute (a:end_1 . 'put') '"'
+    execute (a:start_1 . ',' . a:end_1 . 'foldopen')
+    silent execute (a:start_1 . ',' . a:end_1 . 'delete') '"'
+    silent execute ((new_start_2 - 1) . 'put') '"'
   finally
     call setreg('"', reg_u[0], reg_u[1])
   endtry
 
-  if foldlevel(a:start1) > 0
-    execute (a:start1 . 'foldclose')
-  endif
+  execute (a:start_1 . ',' . new_end_1 . 'foldclose')
+  execute (new_start_2 . ',' . new_end_2 . 'foldclose')
 
-  if foldlevel(a:start2) > 0
-    execute (a:start2 . 'foldclose')
-  endif
-
-  return [a:start1, a:start1 + lines2, new_start2, new_start2 + lines1]
+  return [a:start_1, new_end_1, new_start_2, new_end_2]
 endfunction
