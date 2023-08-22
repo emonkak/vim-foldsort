@@ -25,7 +25,7 @@ function! s:test_nested_folds() abort
   \ ]
 
   " Sort between A and A
-  call s:create_buffer(source)
+  call s:prepare_buffer(source)
   %FoldSort
   call assert_equal([
   \   'A {{{1',
@@ -51,7 +51,7 @@ function! s:test_nested_folds() abort
   call assert_equal(11, foldclosed(11))
 
   " Sort between A.A and A.C
-  call s:create_buffer(source)
+  call s:prepare_buffer(source)
   7foldopen
   8,16FoldSort
   call assert_equal([
@@ -82,7 +82,7 @@ function! s:test_nested_folds() abort
   call assert_equal([17, 18], [foldclosed(17), foldclosedend(17)])
 
   " Sort between A.A and B.B
-  call s:create_buffer(source)
+  call s:prepare_buffer(source)
   1foldopen
   7foldopen
   %FoldSort
@@ -122,24 +122,24 @@ function! s:test_pattern() abort
   let source = [
   \   'C {{{1',
   \   'C',
-  \   'B {{{1',
+  \   '2 {{{1',
   \   'B',
   \   'D {{{1',
   \   'D',
-  \   'A {{{1',
+  \   '1 {{{1',
   \   'A',
   \ ]
 
-  call s:create_buffer(source)
+  call s:prepare_buffer(source)
   %FoldSort [AB]
   call assert_equal([
   \   'C {{{1',
   \   'C',
-  \   'A {{{1',
+  \   '1 {{{1',
   \   'A',
   \   'D {{{1',
   \   'D',
-  \   'B {{{1',
+  \   '2 {{{1',
   \   'B',
   \ ], getline(1, line('$')))
   call assert_equal([1, 2], [foldclosed(1), foldclosedend(1)])
@@ -147,16 +147,16 @@ function! s:test_pattern() abort
   call assert_equal([5, 6], [foldclosed(5), foldclosedend(5)])
   call assert_equal([7, 8], [foldclosed(7), foldclosedend(7)])
 
-  call s:create_buffer(source)
+  call s:prepare_buffer(source)
   %FoldSort! [AB]
   call assert_equal([
   \   'C {{{1',
   \   'C',
-  \   'B {{{1',
+  \   '2 {{{1',
   \   'B',
   \   'D {{{1',
   \   'D',
-  \   'A {{{1',
+  \   '1 {{{1',
   \   'A',
   \ ], getline(1, line('$')))
   call assert_equal([1, 2], [foldclosed(1), foldclosedend(1)])
@@ -164,12 +164,12 @@ function! s:test_pattern() abort
   call assert_equal([5, 6], [foldclosed(5), foldclosedend(5)])
   call assert_equal([7, 8], [foldclosed(7), foldclosedend(7)])
 
-  call s:create_buffer(source)
+  call s:prepare_buffer(source)
   %FoldSort [ABC]
   call assert_equal([
-  \   'A {{{1',
+  \   '1 {{{1',
   \   'A',
-  \   'B {{{1',
+  \   '2 {{{1',
   \   'B',
   \   'D {{{1',
   \   'D',
@@ -181,16 +181,33 @@ function! s:test_pattern() abort
   call assert_equal([5, 6], [foldclosed(5), foldclosedend(5)])
   call assert_equal([7, 8], [foldclosed(7), foldclosedend(7)])
 
-  call s:create_buffer(source)
+  call s:prepare_buffer(source)
   %FoldSort! [ABC]
   call assert_equal([
   \   'C {{{1',
   \   'C',
-  \   'B {{{1',
+  \   '2 {{{1',
   \   'B',
   \   'D {{{1',
   \   'D',
-  \   'A {{{1',
+  \   '1 {{{1',
+  \   'A',
+  \ ], getline(1, line('$')))
+  call assert_equal([1, 2], [foldclosed(1), foldclosedend(1)])
+  call assert_equal([3, 4], [foldclosed(3), foldclosedend(3)])
+  call assert_equal([5, 6], [foldclosed(5), foldclosedend(5)])
+  call assert_equal([7, 8], [foldclosed(7), foldclosedend(7)])
+
+  call s:prepare_buffer(source)
+  %FoldSort! [ABC]
+  call assert_equal([
+  \   'C {{{1',
+  \   'C',
+  \   '2 {{{1',
+  \   'B',
+  \   'D {{{1',
+  \   'D',
+  \   '1 {{{1',
   \   'A',
   \ ], getline(1, line('$')))
   call assert_equal([1, 2], [foldclosed(1), foldclosedend(1)])
@@ -241,11 +258,11 @@ function! s:test_permutations() abort
         call extend(expected_reversed_lines, p_gaps[i + 1])
       endfor
 
-      call s:create_buffer(source)
+      call s:prepare_buffer(source)
       %FoldSort
       call assert_equal(expected_lines, getline(1, line('$')))
 
-      call s:create_buffer(source)
+      call s:prepare_buffer(source)
       %FoldSort!
       call assert_equal(expected_reversed_lines, getline(1, line('$')))
     endfor
@@ -266,7 +283,7 @@ function! s:test_sort_in_case_sensitive_order() abort
   \   'b',
   \ ]
 
-  call s:create_buffer(source)
+  call s:prepare_buffer(source)
   %FoldSort
   call assert_equal([
   \   'A {{{1',
@@ -298,7 +315,7 @@ function! s:test_unclosed_folds() abort
   \   'A',
   \ ]
 
-  call s:create_buffer(source)
+  call s:prepare_buffer(source)
   %FoldSort
   call assert_equal([
   \   'A {{{',
@@ -316,12 +333,6 @@ function! s:test_unclosed_folds() abort
   call assert_equal([7, 8], [foldclosed(7), foldclosedend(7)])
 
   bwipeout!
-endfunction
-
-function! s:create_buffer(source) abort
-  enew!
-  setlocal foldmethod=marker
-  call setline(1, a:source)
 endfunction
 
 function! s:permutations(elements) abort
@@ -348,6 +359,12 @@ function! s:permutations(elements) abort
   endwhile
 
   return results
+endfunction
+
+function! s:prepare_buffer(source) abort
+  enew!
+  setlocal foldmethod=marker
+  call setline(1, a:source)
 endfunction
 
 function! s:swap(elements, i, j) abort

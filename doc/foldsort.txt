@@ -66,9 +66,12 @@ COMMANDS						*foldsort-commands*
 
 	With [!] the order is reversed.
 
-	When {pattern} is specified, fold regions are sorted by the text where
-	{pattern} matches. If there is no match, the fold region is not
-	sorted. When no {pattern}, fold regions are sorted by the text of the
+	When {pattern} is specified, it attempts to finds for lines in the
+	fold region that match the {pattern}. If a match is found, the fold
+	region will be sorted by the matched string. Otherwise, the fold
+	region is not sorted.
+
+	When no {pattern}, fold regions are always sorted by the text of the
 	first line.
 
 :[range]FoldShuffle 						*:FoldShuffle*

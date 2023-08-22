@@ -14,15 +14,7 @@ endfunction
 function! foldsort#sort_folds(pattern, is_reversed) abort range
   let folds = s:enumerate_folds(a:firstline, a:lastline)
   if a:pattern != ''
-    let matched_folds = []
-    for fold in folds
-      let matched_text = matchstr(fold.original_line, a:pattern)
-      if matched_text != ''
-        let fold.text = matched_text
-        call add(matched_folds, fold)
-      endif
-    endfor
-    let folds = matched_folds
+    let folds = s:filter_folds(folds, a:pattern)
   endif
   let fold_groups = s:group_folds(folds)
   let ComparerFn = a:is_reversed
@@ -130,6 +122,22 @@ function! s:enumerate_folds(first_line, last_line) abort
     endif
   endwhile
 
+  return folds
+endfunction
+
+function s:filter_folds(folds, pattern) abort
+  let folds = []
+  for fold in a:folds
+    for lnum in range(fold.start, fold.end)
+      let line = getline(lnum)
+      let matched_text = matchstr(line, a:pattern)
+      if matched_text != ''
+        let fold.text = matched_text
+        call add(folds, fold)
+        break
+      endif
+    endfor
+  endfor
   return folds
 endfunction
 
