@@ -125,7 +125,7 @@ function! s:enumerate_folds(first_line, last_line) abort
   return folds
 endfunction
 
-function s:filter_folds(folds, pattern) abort
+function! s:filter_folds(folds, pattern) abort
   let folds = []
   for fold in a:folds
     for lnum in range(fold.start, fold.end)
