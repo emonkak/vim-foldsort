@@ -198,6 +198,7 @@ endfunction
 
 function! s:swap_ranges(start_1, end_1, start_2, end_2) abort
   let reg_u = [@", getregtype('"')]
+  let cursor = getcurpos()[1:]
 
   let lines_1 = a:end_1 - a:start_1
   let lines_2 = a:end_2 - a:start_2
@@ -214,6 +215,7 @@ function! s:swap_ranges(start_1, end_1, start_2, end_2) abort
     silent execute ((new_start_2 - 1) . 'put') '"'
   finally
     call setreg('"', reg_u[0], reg_u[1])
+    keepjump call cursor(cursor)
   endtry
 
   execute (a:start_1 . ',' . new_end_1 . 'foldclose')
