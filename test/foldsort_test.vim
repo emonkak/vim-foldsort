@@ -327,10 +327,7 @@ function! s:test_unclosed_folds() abort
   \   'D {{{',
   \   'D }}}',
   \ ], getline(1, line('$')))
-  call assert_equal(-1, foldclosed(1))
-  call assert_equal([3, 4], [foldclosed(3), foldclosedend(3)])
-  call assert_equal([5, 6], [foldclosed(5), foldclosedend(5)])
-  call assert_equal([7, 8], [foldclosed(7), foldclosedend(7)])
+  call assert_equal([1, 8], [foldclosed(1), foldclosedend(1)])
 
   bwipeout!
 endfunction

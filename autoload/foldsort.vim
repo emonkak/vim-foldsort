@@ -27,6 +27,10 @@ function! foldsort#sort_folds(pattern, is_reversed) abort range
 endfunction
 
 function! s:arrange_folds(before_folds, after_folds) abort
+  for fold in a:after_folds
+    execute fold.start . ',' . fold.end . 'foldopen'
+  endfor
+
   for i in range(len(a:before_folds))
     let before_fold = a:before_folds[i]
     let after_fold = a:after_folds[i]
@@ -57,6 +61,11 @@ function! s:arrange_folds(before_folds, after_folds) abort
     if g:foldsort_debug && !s:check_folds(a:before_folds)
       break
     endif
+  endfor
+
+  for fold in a:after_folds
+    " Folding might become invalid if rearranged, so errors are ignored.
+    silent! execute fold.start . ',' . fold.end . 'foldclose'
   endfor
 endfunction
 
@@ -207,19 +216,14 @@ function! s:swap_ranges(start_1, end_1, start_2, end_2) abort
   let new_end_2 = new_start_2 + lines_1
 
   try
-    execute (a:start_2 . ',' . a:end_2 . 'foldopen')
     silent execute (a:start_2 . ',' . a:end_2 . 'delete') '"'
     silent execute (a:end_1 . 'put') '"'
-    execute (a:start_1 . ',' . a:end_1 . 'foldopen')
     silent execute (a:start_1 . ',' . a:end_1 . 'delete') '"'
     silent execute ((new_start_2 - 1) . 'put') '"'
   finally
     call setreg('"', reg_u[0], reg_u[1])
     keepjump call cursor(cursor)
   endtry
-
-  execute (a:start_1 . ',' . new_end_1 . 'foldclose')
-  execute (new_start_2 . ',' . new_end_2 . 'foldclose')
 
   return [a:start_1, new_end_1, new_start_2, new_end_2]
 endfunction
