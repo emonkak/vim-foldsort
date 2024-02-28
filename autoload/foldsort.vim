@@ -27,8 +27,8 @@ function! foldsort#sort_folds(pattern, is_reversed) abort range
 endfunction
 
 function! s:arrange_folds(before_folds, after_folds) abort
-  for fold in a:after_folds
-    execute fold.start . ',' . fold.end . 'foldopen'
+  for fold in a:before_folds
+    execute fold.start . ',' . fold.end . 'foldopen!'
   endfor
 
   for i in range(len(a:before_folds))
@@ -49,8 +49,8 @@ function! s:arrange_folds(before_folds, after_folds) abort
 
     " Recalculate positions between the ahead fold and the behind fold.
     if ahead_fold.index + 1 < behind_fold.index
-      let offset = (ahead_fold.end - ahead_fold.start) -
-      \            (behind_fold.end - behind_fold.start) 
+      let offset = (ahead_fold.end - ahead_fold.start)
+      \          - (behind_fold.end - behind_fold.start)
 
       for fold in a:before_folds[ahead_fold.index + 1:behind_fold.index - 1]
         let fold.start += offset
@@ -64,7 +64,8 @@ function! s:arrange_folds(before_folds, after_folds) abort
   endfor
 
   for fold in a:after_folds
-    " Folding might become invalid if rearranged, so errors are ignored.
+    " Some foldings may be invalid when it was rearranged, so we should ignore
+    " errors.
     silent! execute fold.start . ',' . fold.end . 'foldclose'
   endfor
 endfunction
@@ -192,10 +193,12 @@ function! s:swap_folds(first_fold, second_fold) abort
     let behind_fold = a:first_fold
   endif
 
-  let [start1, end1, start2, end2] = s:swap_ranges(ahead_fold.start,
-  \                                                ahead_fold.end,
-  \                                                behind_fold.start,
-  \                                                behind_fold.end)
+  let [start1, end1, start2, end2] = s:swap_ranges(
+  \   ahead_fold.start,
+  \   ahead_fold.end,
+  \   behind_fold.start,
+  \   behind_fold.end
+  \ )
 
   let ahead_fold.start = start2
   let ahead_fold.end = end2
