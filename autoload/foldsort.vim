@@ -31,37 +31,43 @@ function! s:arrange_folds(before_folds, after_folds) abort
     execute fold.start . ',' . fold.end . 'foldopen!'
   endfor
 
-  for i in range(len(a:before_folds))
-    let before_fold = a:before_folds[i]
-    let after_fold = a:after_folds[i]
+  setlocal nofoldenable
 
-    if before_fold is after_fold
-      continue
-    endif
+  try
+    for i in range(len(a:before_folds))
+      let before_fold = a:before_folds[i]
+      let after_fold = a:after_folds[i]
 
-    let j = after_fold.index
-    let a:before_folds[i] = after_fold
-    let a:before_folds[j] = before_fold
-    let after_fold.index = i
-    let before_fold.index = j
+      if before_fold is after_fold
+        continue
+      endif
 
-    let [ahead_fold, behind_fold] = s:swap_folds(before_fold, after_fold)
+      let j = after_fold.index
+      let a:before_folds[i] = after_fold
+      let a:before_folds[j] = before_fold
+      let after_fold.index = i
+      let before_fold.index = j
 
-    " Recalculate positions between the ahead fold and the behind fold.
-    if ahead_fold.index + 1 < behind_fold.index
-      let offset = (ahead_fold.end - ahead_fold.start)
-      \          - (behind_fold.end - behind_fold.start)
+      let [ahead_fold, behind_fold] = s:swap_folds(before_fold, after_fold)
 
-      for fold in a:before_folds[ahead_fold.index + 1:behind_fold.index - 1]
-        let fold.start += offset
-        let fold.end += offset
-      endfor
-    endif
+      " Recalculate positions between the ahead fold and the behind fold.
+      if ahead_fold.index + 1 < behind_fold.index
+        let offset = (ahead_fold.end - ahead_fold.start)
+        \          - (behind_fold.end - behind_fold.start)
 
-    if g:foldsort_debug && !s:check_folds(a:before_folds)
-      break
-    endif
-  endfor
+        for fold in a:before_folds[ahead_fold.index + 1:behind_fold.index - 1]
+          let fold.start += offset
+          let fold.end += offset
+        endfor
+      endif
+
+      if g:foldsort_debug && !s:check_folds(a:before_folds)
+        break
+      endif
+    endfor
+  finally
+    setlocal foldenable
+  endtry
 
   for fold in a:after_folds
     " Some foldings may be invalid when it was rearranged, so we should ignore
