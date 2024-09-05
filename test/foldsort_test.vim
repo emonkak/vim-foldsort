@@ -271,7 +271,7 @@ function! s:test_permutations() abort
   bwipeout!
 endfunction
 
-function! s:test_sort_in_case_sensitive_order() abort
+function! s:test_sort_by_case_sensitive() abort
   let source = [
   \   'A {{{1',
   \   'A',
@@ -283,6 +283,7 @@ function! s:test_sort_in_case_sensitive_order() abort
   \   'b',
   \ ]
 
+  set ignorecase
   call s:prepare_buffer(source)
   %FoldSort
   call assert_equal([
@@ -301,6 +302,7 @@ function! s:test_sort_in_case_sensitive_order() abort
   call assert_equal([7, 8], [foldclosed(7), foldclosedend(7)])
 
   bwipeout!
+  set ignorecase&
 endfunction
 
 function! s:test_unclosed_folds() abort
